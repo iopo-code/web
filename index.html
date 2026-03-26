@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智慧温室监测管理平台</title>
+    
+    <!-- 第三方库 -->
+    <link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/element-plus"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    
+    <!-- 应用样式 -->
+    <link rel="stylesheet" href="./css/main.css">
+</head>
+<body>
+    <div id="app">
+        <div class="sidebar">
+            <div class="logo">智慧温室<br>监测管理平台</div>
+            <div v-for="item in navItems" :key="item.id" 
+                 class="nav-item" 
+                 :class="{ active: currentPage === item.id }"
+                 @click="switchPage(item.id)">
+                <span style="margin-right: 8px;">{{item.icon}}</span>
+                {{item.name}}
+            </div>
+
+            <div style="margin-top: auto; padding: 20px;">
+                <div style="background:#f3faf7; padding: 15px; border-radius: 8px; font-size: 11px;">
+                    <div style="color:#2ba471; font-weight: bold;">智能施肥提醒</div>
+                    <p style="color:#999;">累计24小时土壤湿度低于25%，建议启动灌溉系统。</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="top-bar">
+                <div>📅 {{date}} <span class="status-tag" style="margin-left: 15px;">系统运行正常 (3650h)</span></div>
+                <div style="color: #2ba471; font-weight: bold;">
+                    {{currentPageInfo.icon}} {{currentPageInfo.name}}
+                </div>
+            </div>
+
+            <!-- ==================== 实时监测页面 ==================== -->
+            <div v-if="currentPage === 'monitor'" class="page-content">
+                <div class="card-row">
+                    <div class="data-card">
+                        <div class="card-label">空气温湿度 <span style="color:#67c23a">适宜</span></div>
+                        <div class="card-value">{{formatNumber(env.airTemp)}}℃ <span
+                                style="font-weight: normal; font-size: 16px; color: #999;">|</span> {{formatNumber(env.airHum)}}<small>%</small></div>
+                        <div class="card-sub">{{airSub}}</div>
+                    </div>
+                    <div class="data-card card-soil">
+                        <div class="card-label">土壤温湿度 <span style="color:#ff9900">略干</span></div>
+                        <div class="card-value">{{formatNumber(env.soilTemp)}}℃ <span
+                                style="font-weight: normal; font-size: 16px; color: #999;">|</span> {{formatNumber(env.soilHum)}}<small>%</small></div>
+                        <div class="card-sub">{{soilSub}}</div>
+                    </div>
+                    <div class="data-card">
+                        <div class="card-label">CO2浓度 <span style="color:#67c23a">优秀</span></div>
+                        <div class="card-value">{{formatNumber(env.co2, 0)}} <small>PPM</small></div>
+                        <div class="card-sub">{{co2Sub}}</div>
+                    </div>
+                    <div class="data-card">
+                        <div class="card-label">光照强度 <span style="color:#909399">阴亮</span></div>
+                        <div class="card-value">{{formatNumber(env.light, 0)}} <small>Lux</small></div>
+                        <div class="card-sub">{{lightSub}}</div>
+                    </div>
+                </div>
+
+                <div class="content-grid">
+                    <div class="panel">
+                        <div class="panel-title">
+                            环境综合评估
+                            <div>
+                                <el-button size="small" type="warning" @click="debugSimulate" title="仅用于调试数据动态变化">刷新数据</el-button>
+                            </div>
+                        </div>
+                        
+                        <!-- 环境健康评分 -->
+                        <div style="text-align: center; padding: 10px 0;">
+                            <div style="font-size: 40px; font-weight: bold; color: #67c23a; display: inline-flex; align-items: baseline;">
+                                {{envScore}}
+                                <span style="font-size: 16px; color: #909399; margin-left: 5px;">分</span>
+                            </div>
+                            <div style="color: #909399; font-size: 12px; margin-top: 3px;">
+                                环境健康指数
+                            </div>
+                            <el-progress :percentage="envScore" :color="scoreColor" style="margin-top: 10px; max-width: 250px; margin-left: auto; margin-right: auto;"></el-progress>
+                        </div>
+
+                        <!-- 各指标状态 -->
+                        <div style="margin-top: 15px;">
+                            <div style="font-weight: bold; margin-bottom: 10px; color: #606266; font-size: 13px;">📋 指标状态详情</div>
+                            <el-row :gutter="10">
+                                <el-col :span="12" v-for="(indicator, idx) in envIndicators" :key="idx" style="margin-bottom: 8px;">
+                                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; background: #f8fafc; border-radius: 6px; font-size: 12px;">
+                                        <span>
+                                            <span style="margin-right: 5px;">{{indicator.icon}}</span>
+                                            {{indicator.name}}
+                                        </span>
+                                        <el-tag :type="indicator.status" size="small" style="transform: scale(0.9);">
+                                            {{indicator.text}}
+                                        </el-tag>
+                                    </div>
+                                </el-col>
+                            </el-row>
+                        </div>
+
+                        <!-- 优化建议 -->
+                        <div style="margin-top: 15px;">
+                            <div style="font-weight: bold; margin-bottom: 10px; color: #606266; font-size: 13px;">💡 优化建议</div>
+                            <div v-if="suggestions.length > 0" style="background: #ecf8ff; border-left: 3px solid #409eff; padding: 10px 12px; border-radius: 4px; font-size: 12px;">
+                                <div v-for="(sug, idx) in suggestions" :key="idx" style="margin-bottom: 5px; color: #409eff; line-height: 1.4;">
+                                    {{idx + 1}}. {{sug}}
+                                </div>
+                            </div>
+                            <div v-else style="background: #f0f9eb; border-left: 3px solid #67c23a; padding: 10px 12px; border-radius: 4px; color: #67c23a; font-size: 12px;">
+                                ✓ 所有环境指标处于最佳范围
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="panel">
+                        <div class="panel-title">24h 温湿度趋势 <span
+                                style="font-weight: normal; font-size: 12px; color: #999;">空气指标</span></div>
+                        <div id="trendChart" style="width: 100%; height: 320px;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==================== 设备控制页面 ==================== -->
+            <div v-else-if="currentPage === 'control'" class="page-content">
+                <!-- 设备统计卡片 -->
+                <div class="card-row">
+                    <div class="data-card">
+                        <div class="card-label">设备总数</div>
+                        <div class="card-value" style="color: #409eff;">{{totalDevices}} <small>台</small></div>
+                        <div class="card-sub">当前 {{runningStatus}}</div>
+                    </div>
+                    <div class="data-card">
+                        <div class="card-label">运行中</div>
+                        <div class="card-value" style="color: #67c23a;">{{runningCount}} <small>台</small></div>
+                        <div class="card-sub">在线率 {{onlineRate}}%</div>
+                    </div>
+                    <div class="data-card">
+                        <div class="card-label">当前功耗</div>
+                        <div class="card-value" style="color: #e6a23c;">{{formatNumber(totalPower, 2)}} <small>kW</small></div>
+                        <div class="card-sub">实时功率监测</div>
+                    </div>
+                    <div class="data-card">
+                        <div class="card-label">待机中</div>
+                        <div class="card-value" style="color: #909399;">{{totalDevices - runningCount}} <small>台</small></div>
+                        <div class="card-sub">设备正常待命</div>
+                    </div>
+                </div>
+
+                <div class="content-grid">
+                    <div class="panel">
+                        <div class="panel-title">
+                            设备控制中心
+                            <div>
+                                <el-button size="small" type="primary" @click="allControl(true)">全部开启</el-button>
+                                <el-button size="small" type="danger" @click="allControl(false)">全部关闭</el-button>
+                            </div>
+                        </div>
+
+                        <div class="device-grid">
+                            <div v-for="(device, index) in deviceConfig" :key="device.id" class="device-item">
+                                <div class="device-info">
+                                    <span class="device-name">
+                                        <span style="margin-right: 8px; font-size: 20px;">{{device.icon}}</span>
+                                        {{device.name}}
+                                    </span>
+                                    <span class="device-status" :style="{color: getDeviceStatus(index) ? '#2ba471' : '#999'}">
+                                        {{getDeviceStatus(index) ? '运行中' : '待机中'}} | {{device.power}}kW
+                                    </span>
+                                </div>
+                                <el-switch 
+                                    :model-value="getDeviceStatus(index)" 
+                                    active-color="#2ba471" 
+                                    @change="(val) => { setDeviceStatus(index, val); controlDevice(device.id, val); }">
+                                </el-switch>
+                            </div>
+                        </div>
+
+                        <div class="log-list">
+                            <div style="font-weight: bold; margin-bottom: 10px;">📋 设备操作日志</div>
+                            <div class="log-item"><span class="log-time">10:24:15</span><span
+                                    class="log-tag">[系统]</span>根据光照强度，自动开启 [北侧电动卷帘]</div>
+                            <div class="log-item"><span class="log-time">09:15:22</span><span class="log-tag"
+                                    style="color:#409eff">[手动]</span>操作员 李工程师 关闭 [全光谱补光灯]</div>
+                            <div class="log-item"><span class="log-time">08:00:00</span><span
+                                    class="log-tag">[系统]</span>执行每日例行检查：{{totalDevices}}台设备运行状态良好</div>
+                        </div>
+                    </div>
+
+                    <div class="panel">
+                        <div class="panel-title">设备运行状态 <span
+                                style="font-weight: normal; font-size: 12px; color: #999;">实时监控</span></div>
+                        <div style="padding: 20px;">
+                            <el-row :gutter="20" style="margin-bottom: 20px;">
+                                <el-col :span="12" v-for="(device, index) in deviceConfig" :key="device.id" style="margin-bottom: 15px;">
+                                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px; background: #f8fafc; border-radius: 8px;">
+                                        <span>{{device.icon}} {{device.name}}</span>
+                                        <el-tag :type="getDeviceStatus(index) ? 'success' : 'info'" size="small">
+                                            {{getDeviceStatus(index) ? '运行中' : '待机'}}
+                                        </el-tag>
+                                    </div>
+                                </el-col>
+                            </el-row>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==================== 历史数据页面 ==================== -->
+            <div v-else-if="currentPage === 'history'" class="page-content">
+                <div class="panel" style="min-height: 500px;">
+                    <div class="panel-title">历史数据查询</div>
+                    <div style="padding: 40px; text-align: center;">
+                        <el-empty description="历史数据功能开发中..." />
+                        <p style="color: #999; margin-top: 20px;">支持按时间范围查询、导出、打印历史环境数据</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==================== 告警管理页面 ==================== -->
+            <div v-else-if="currentPage === 'alarm'" class="page-content">
+                <div class="panel" style="min-height: 500px;">
+                    <div class="panel-title">告警信息管理</div>
+                    <div style="padding: 40px; text-align: center;">
+                        <el-empty description="暂无告警信息" />
+                        <p style="color: #999; margin-top: 20px;">所有设备运行正常，系统无告警</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==================== 系统设置页面 ==================== -->
+            <div v-else-if="currentPage === 'settings'" class="page-content">
+                <div class="panel" style="min-height: 500px;">
+                    <div class="panel-title">系统设置</div>
+                    <div style="padding: 40px; text-align: center;">
+                        <el-empty description="系统设置功能开发中..." />
+                        <p style="color: #999; margin-top: 20px;">设备配置、网络设置、用户管理等功能</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 应用脚本 -->
+    <script src="./js/config.js"></script>
+    <script src="./js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,216 @@
+body {
+    margin: 0;
+    font-family: "Helvetica Neue", Helvetica, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", Arial, sans-serif;
+    background-color: #f5f7fa;
+    color: #333;
+}
+
+#app {
+    display: flex;
+    height: 100vh;
+}
+
+/* 侧边栏 */
+.sidebar {
+    width: 180px;
+    background: #fff;
+    border-right: 1px solid #e6e6e6;
+    display: flex;
+    flex-direction: column;
+    padding: 20px 0;
+}
+
+.logo {
+    padding: 0 20px 30px;
+    font-weight: bold;
+    color: #2ba471;
+    line-height: 1.2;
+    font-size: 18px;
+}
+
+.nav-item {
+    padding: 15px 25px;
+    cursor: pointer;
+    color: #666;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    border-right: 3px solid transparent;
+    transition: 0.3s;
+}
+
+.nav-item.active {
+    background: #f0f9eb;
+    color: #2ba471;
+    border-right-color: #2ba471;
+}
+
+.nav-item:hover {
+    background: #f9f9f9;
+}
+
+/* 主体区域 */
+.main-content {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    font-size: 13px;
+    color: #999;
+}
+
+.status-tag {
+    background: #e1f3d8;
+    color: #67c23a;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+}
+
+/* 数据卡片布局 */
+.card-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.data-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 18px;
+    border: 1px solid #f0f0f0;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
+}
+
+.card-label {
+    font-size: 12px;
+    color: #909399;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.card-value {
+    font-size: 22px;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.card-sub {
+    font-size: 11px;
+    color: #999;
+}
+
+/* 特殊卡片样式 */
+.card-soil {
+    border: 1.5px solid #ff9900;
+}
+
+.tag-status {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: #fff;
+}
+
+/* 中间核心区域 */
+.content-grid {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap: 20px;
+}
+
+.panel {
+    background: #fff;
+    border-radius: 12px;
+    padding: 20px;
+    min-height: 400px;
+}
+
+.panel-title {
+    font-size: 15px;
+    font-weight: bold;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* 设备列表 */
+.device-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+.device-item {
+    background: #f8fafc;
+    border-radius: 8px;
+    padding: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border: 1px solid #f0f0f0;
+}
+
+.device-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.device-name {
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 4px;
+}
+
+.device-status {
+    font-size: 12px;
+    color: #2ba471;
+}
+
+/* 日志列表 */
+.log-list {
+    margin-top: 25px;
+    font-size: 12px;
+    color: #666;
+}
+
+/* 页面切换过渡动画 */
+.page-content {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.log-item {
+    display: flex;
+    margin-bottom: 10px;
+}
+
+.log-time {
+    width: 80px;
+    color: #999;
+}
+
+.log-tag {
+    color: #2ba471;
+    margin-right: 10px;
+}
